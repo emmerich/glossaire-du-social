@@ -8,3 +8,5 @@ Parser for <http://glossairedusocial.fr/>
 npm install
 node src
 ```
+
+Output will be written to `out.json`
