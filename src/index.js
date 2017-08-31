@@ -22,6 +22,7 @@ const treatText = pipe(upToFirstWhitespace, removeDuplicateWhitespace, trim);
 
   await letters.reduce(async (previous, letter) => {
     await previous;
+    console.log(`Getting letter: ${letter}`)
 
     const response = await fetch(`http://glossairedusocial.fr/index.php?lettre=${letter}`);
     const text = await response.text();
