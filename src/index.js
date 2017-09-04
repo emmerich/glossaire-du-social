@@ -1,7 +1,24 @@
 const { writeFileSync } = require('fs');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
-const { pipe, trim } = require('ramda');
+const { pipe, trim, tap, identity } = require('ramda');
+const yargs = require('yargs')
+  .option('letters', {
+    type: 'array',
+    describe: 'Letters to crawl',
+    demandOption: false,
+    default: 'abcdefghijklmnopqrstuvwxyz'.split('')
+  })
+  .option('debug', {
+    type: 'boolean',
+    descibe: 'Debugging enabled',
+    demandOption: false,
+    default: false
+  })
+  .help()
+  .argv;
+
+const { letters, debug } = yargs;
 
 const getParentText = elem => elem
   .clone()    //clone the element
@@ -13,11 +30,14 @@ const getParentText = elem => elem
 const indexOfOrInfinity = (text, test) => text.indexOf(test) > -1 ? text.indexOf(test) : Number.MAX_VALUE;
 const firstBadChar = text => Math.min(indexOfOrInfinity(text, '('), indexOfOrInfinity(text, '\n'))
 const upToFirstWhitespace = text => text.substring(0, firstBadChar(text));
-const removeDuplicateWhitespace = text => text.replace(/\s+/, ' ');
-const treatText = pipe(upToFirstWhitespace, removeDuplicateWhitespace, trim);
+const removeDuplicateWhitespace = text => text.replace(/\s+/g, ' ')
+const removeNewLines = text => text.replace(/\s/gi, ' ')
+
+const log = debug ? tap(console.log) : tap(identity)
+const treatText = pipe(log, removeNewLines, log, removeDuplicateWhitespace, log, upToFirstWhitespace, log, trim, log);
 
 (async () => {
-  const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
   let result = [];
 
   await letters.reduce(async (previous, letter) => {
@@ -43,6 +63,11 @@ const treatText = pipe(upToFirstWhitespace, removeDuplicateWhitespace, trim);
 
       const abbreviation = treatText(abbreviation_text);
       const full_text = treatText(full_text_text);
+
+      if(debug) {
+        console.log(`[${abbreviation}] - ${full_text}
+          [${abbreviation_text}] - ${full_text_text}`)
+      }
 
       result.push([abbreviation, full_text]);
     });
